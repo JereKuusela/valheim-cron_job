@@ -1,0 +1,9 @@
+{
+  "name": "Cron_Job",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/JereKuusela/valheim-cron_job",
+  "description": "Allows executing commands automatically on the server.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.1901"
+  ]
+}
