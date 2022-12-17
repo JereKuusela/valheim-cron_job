@@ -53,7 +53,7 @@ public class TrackManager
   {
     if (CronManager.ZoneJobs.Count == 0) return;
     if (Poked.ContainsKey(zone)) CronManager.Execute(zone, Poked[zone]);
-    else CronManager.Execute(zone, null);
+    else CronManager.Execute(zone);
     Poked[zone] = DateTime.UtcNow;
   }
 

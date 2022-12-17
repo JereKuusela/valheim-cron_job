@@ -30,12 +30,21 @@ public class CronManager
   public static List<CronEntry> Jobs = new();
   public static List<CronEntry> ZoneJobs = new();
 
-  private static DateTime? Parse(string value, DateTime? next = null)
-  {
+private static DateTime? Parse(string value)
+{
     CronExpression expression = CronExpression.Parse(value);
-    return expression.GetNextOccurrence(next ?? DateTime.UtcNow);
-  }
-  private static System.Random random = new();
+    return expression.GetNextOccurrence(DateTime.UtcNow);
+}
+
+private static DateTime? Parse(string value, DateTime next)
+{
+    CronExpression expression = CronExpression.Parse(value);
+    DateTime utcnext = DateTime.SpecifyKind(next, DateTimeKind.Utc);
+    return expression.GetNextOccurrence(utcnext);
+}
+
+
+    private static System.Random random = new();
   private static bool Roll(float chance)
   {
     if (chance >= 1f) return true;
@@ -63,7 +72,7 @@ public class CronManager
 
   }
 
-  public static void Execute(Vector2i zone, DateTime? previous)
+  public static void Execute(Vector2i zone, DateTime previous)
   {
     var time = DateTime.UtcNow;
     foreach (var cron in ZoneJobs)
@@ -71,8 +80,8 @@ public class CronManager
       var run = false;
       if (cron.schedule != "")
         run = Parse(cron.schedule, previous) <= time;
-      if (cron.inactive != 0f && previous.HasValue)
-        run = (time - previous.Value).TotalMinutes >= cron.inactive;
+      if (cron.inactive != 0f && previous != null )
+        run = (time - previous).TotalMinutes >= cron.inactive;
       if (!run) continue;
       var pos = ZoneSystem.instance.GetZonePos(zone);
       var cmd = cron.command
@@ -98,7 +107,40 @@ public class CronManager
     }
   }
 
-  [HarmonyPatch(typeof(Chat), nameof(Chat.Awake)), HarmonyPostfix]
+    public static void Execute(Vector2i zone)
+    {
+        var time = DateTime.UtcNow;
+        foreach (var cron in ZoneJobs)
+        {
+            var run = false;
+            if (cron.schedule != "")
+                run = Parse(cron.schedule) <= time;
+            if (!run) continue;
+            var pos = ZoneSystem.instance.GetZonePos(zone);
+            var cmd = cron.command
+              .Replace("$$i", zone.x.ToString())
+              .Replace("$$I", zone.x.ToString())
+              .Replace("$$j", zone.y.ToString())
+              .Replace("$$J", zone.y.ToString())
+              .Replace("$$x", pos.x.ToString())
+              .Replace("$$X", pos.x.ToString())
+              .Replace("$$y", pos.y.ToString())
+              .Replace("$$Y", pos.y.ToString())
+              .Replace("$$z", pos.z.ToString())
+              .Replace("$$Z", pos.z.ToString());
+            if (Roll(cron.chance))
+            {
+                Console.instance.TryRunCommand(cmd);
+                CronJob.Log.LogInfo($"Executing: {cmd}");
+            }
+            else
+            {
+                CronJob.Log.LogInfo($"Skipped: {cmd}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Chat), nameof(Chat.Awake)), HarmonyPostfix]
   public static void ChatAwake()
   {
     if (File.Exists(FilePath))
