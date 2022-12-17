@@ -38,7 +38,7 @@ public class TrackManager
           var split = kvp.Key.Split(',');
           return new Vector2i(int.Parse(split[0]), int.Parse(split[1]));
         },
-        kvp => new DateTime(kvp.Value)
+        kvp => new DateTime(kvp.Value, DateTimeKind.Utc)
       );
       CronJob.Log.LogInfo($"Reloading {Poked.Count} zone pokes.");
     }

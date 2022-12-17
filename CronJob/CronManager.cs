@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using BepInEx;
 using Cronos;
@@ -13,6 +14,7 @@ public class CronData
   public float interval = 10;
   public List<CronEntry> jobs = new();
   public List<CronEntry> zone = new();
+  public List<CronEntry> join = new();
 }
 public class CronEntry
 {
@@ -31,6 +33,7 @@ public class CronManager
 
   public static List<CronEntry> Jobs = new();
   public static List<CronEntry> ZoneJobs = new();
+  public static List<CronEntry> JoinJobs = new();
   public static float Interval = 10f;
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
@@ -102,8 +105,42 @@ public class CronManager
     }
   }
 
+
+  [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_CharacterID)), HarmonyPostfix]
+  static void AddPeer(ZNet __instance, ZRpc rpc)
+  {
+    if (!__instance.IsServer()) return;
+    var peer = __instance.GetPeer(rpc);
+    foreach (var cron in JoinJobs)
+    {
+      var cmd = cron.command
+        .Replace("$$name", peer.m_playerName)
+        .Replace("$$NAME", peer.m_playerName)
+        .Replace("$$first", peer.m_playerName.Split(' ')[0])
+        .Replace("$$FIRST", peer.m_playerName.Split(' ')[0])
+        .Replace("$$id", peer.m_characterID.m_userID.ToString())
+        .Replace("$$ID", peer.m_characterID.m_userID.ToString())
+        .Replace("$$x", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("$$X", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("$$y", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("$$Y", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("$$z", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("$$Z", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
+      if (Roll(cron.chance))
+      {
+        Console.instance.TryRunCommand(cmd);
+        CronJob.Log.LogInfo($"Executing: {cmd}");
+      }
+      else
+      {
+        CronJob.Log.LogInfo($"Skipped: {cmd}");
+      }
+    }
+
+  }
+
   [HarmonyPatch(typeof(Chat), nameof(Chat.Awake)), HarmonyPostfix]
-  public static void ChatAwake()
+  static void ChatAwake()
   {
     if (File.Exists(FilePath))
       FromFile();
@@ -154,6 +191,8 @@ public class CronManager
       CronJob.Log.LogInfo($"Reloading {Jobs.Count} cron jobs.");
       ZoneJobs = data.zone;
       CronJob.Log.LogInfo($"Reloading {ZoneJobs.Count} zone cron jobs.");
+      JoinJobs = data.join;
+      CronJob.Log.LogInfo($"Reloading {JoinJobs.Count} join jobs.");
     }
     catch (Exception e)
     {
