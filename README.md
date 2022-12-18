@@ -32,7 +32,7 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
 - command: Command to execute.
 - chance: Chance of executing the command. Default is 1 (100%).
 - schedule: Cron schedule. Default is never.
-- inactive: How many minutes the zone must have been inactive. Default is 0 (never).
+- inactive: How many minutes the zone must have been inactive. Default is 0 (always).
 
 Command parameters: 
 - $$i: X index of the targeted zone. For example 2.
