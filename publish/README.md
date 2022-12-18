@@ -18,5 +18,13 @@ Donations: [Buy me a computer](https://www.buymeacoffee.com/jerekuusela)
 
 # Changelog
 
+- v1.1
+	- Adds support for join jobs.
+	- Adds support for Discord Connector.
+	- Adds support for time zones.
+	- Adds new config options (timezone, interval, logJobs, logZone, logJoin, discordConnector).
+	- Changes schedule and inactive conditions to be AND instead of OR (so both must apply instead of one of them).
+	- Fixes error for some schedules.
+
 - v1.0
 	- Initial release.

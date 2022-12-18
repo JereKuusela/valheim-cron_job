@@ -24,6 +24,8 @@ public class CronData
   public bool logZone = true;
   [DefaultValue(true)]
   public bool logJoin = true;
+  [DefaultValue(true)]
+  public bool discordConnector = true;
 }
 public class CronEntry
 {
@@ -52,6 +54,7 @@ public class CronManager
   public static bool LogJobs = true;
   public static bool LogZone = true;
   public static bool LogJoin = true;
+  public static bool DiscordConnector = true;
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
   private static DateTime? Parse(string value, DateTime? next = null)
@@ -76,19 +79,24 @@ public class CronManager
         {
           Console.instance.TryRunCommand(cron.command);
           if (LogJobs)
-            CronJob.Log.LogInfo($"Executing: {cron.command}");
+            Log($"Executing: {cron.command}");
         }
         else
         {
           if (LogJobs)
-            CronJob.Log.LogInfo($"Skipped: {cron.command}");
+            Log($"Skipped: {cron.command}");
         }
         cron.next = Parse(cron.schedule);
       }
     }
 
   }
-
+  private static void Log(string message)
+  {
+    CronJob.Log.LogInfo(message);
+    if (DiscordConnector)
+      DiscordHook.SendMessage(message);
+  }
   public static void Execute(Vector2i zone, DateTime? previous)
   {
     var time = DateTime.UtcNow;
@@ -117,12 +125,12 @@ public class CronManager
       {
         Console.instance.TryRunCommand(cmd);
         if (LogZone)
-          CronJob.Log.LogInfo($"Executing: {cmd}");
+          Log($"Executing: {cmd}");
       }
       else
       {
         if (LogZone)
-          CronJob.Log.LogInfo($"Skipped: {cmd}");
+          Log($"Skipped: {cmd}");
       }
     }
   }
@@ -152,12 +160,12 @@ public class CronManager
       {
         Console.instance.TryRunCommand(cmd);
         if (LogJoin)
-          CronJob.Log.LogInfo($"Executing: {cmd}");
+          Log($"Executing: {cmd}");
       }
       else
       {
         if (LogJoin)
-          CronJob.Log.LogInfo($"Skipped: {cmd}");
+          Log($"Skipped: {cmd}");
       }
     }
 
@@ -202,7 +210,7 @@ public class CronManager
       var data = Data.Read(FilePath, Data.Deserialize<CronData>);
       Interval = data.interval;
       if (ParseTimeZone(data.timezone))
-        CronJob.Log.LogInfo($"Selected time zone {TimeZone.Id} / {TimeZone.DisplayName}.");
+        Log($"Selected time zone {TimeZone.Id} / {TimeZone.DisplayName}.");
       else
       {
         CronJob.Log.LogWarning($"Time zone {data.timezone} not found, using UTC. Possible time zones are:");
@@ -212,14 +220,15 @@ public class CronManager
       LogJobs = data.logJobs;
       LogZone = data.logZone;
       LogJoin = data.logJoin;
+      DiscordConnector = data.discordConnector;
       Jobs = data.jobs;
       foreach (var cron in Jobs)
         cron.next = Parse(cron.schedule);
-      CronJob.Log.LogInfo($"Reloading {Jobs.Count} cron jobs.");
+      Log($"Reloading {Jobs.Count} cron jobs.");
       ZoneJobs = data.zone;
-      CronJob.Log.LogInfo($"Reloading {ZoneJobs.Count} zone cron jobs.");
+      Log($"Reloading {ZoneJobs.Count} zone cron jobs.");
       JoinJobs = data.join;
-      CronJob.Log.LogInfo($"Reloading {JoinJobs.Count} join jobs.");
+      Log($"Reloading {JoinJobs.Count} join jobs.");
     }
     catch (Exception e)
     {

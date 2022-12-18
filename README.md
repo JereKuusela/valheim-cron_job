@@ -20,6 +20,7 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
 - logJobs: Whether to log general jobs. Default is true.
 - logZone: Whether to log zone based jobs. Default is true.
 - logJoin: Whether to log join jobs. Default is true.
+- discordConnector: Whether to send data to [Discord Connector](https://valheim.thunderstore.io/package/nwesterhausen/DiscordConnector/). Default is true.
 
 ## Jobs
 

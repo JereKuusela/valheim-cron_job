@@ -9,7 +9,7 @@ public class CronJob : BaseUnityPlugin
 {
   public const string GUID = "cron_job";
   public const string NAME = "Cron Job";
-  public const string VERSION = "1.0";
+  public const string VERSION = "1.1";
   private static ManualLogSource? Logs;
   public static ManualLogSource Log => Logs!;
   public void Awake()
@@ -19,6 +19,7 @@ public class CronJob : BaseUnityPlugin
   }
   public void Start()
   {
+    DiscordHook.Init();
     CronManager.SetupWatcher();
   }
   private float timer = 0f;
