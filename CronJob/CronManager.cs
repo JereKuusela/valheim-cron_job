@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using BepInEx;
@@ -10,18 +11,31 @@ namespace CronJob;
 
 public class CronData
 {
+  [DefaultValue("UTC")]
   public string timezone = "UTC";
-  public float interval = 10;
+  [DefaultValue(10f)]
+  public float interval = 10f;
   public List<CronEntry> jobs = new();
   public List<CronEntry> zone = new();
   public List<CronEntry> join = new();
+  [DefaultValue(true)]
+  public bool logJobs = true;
+  [DefaultValue(true)]
+  public bool logZone = true;
+  [DefaultValue(true)]
+  public bool logJoin = true;
 }
 public class CronEntry
 {
+  [DefaultValue("")]
   public string command = "";
+  [DefaultValue("")]
   public string schedule = "";
+  [DefaultValue(0f)]
   public float inactive = 0f;
+  [DefaultValue(1f)]
   public float chance = 1f;
+  [DefaultValue(null)]
   public DateTime? next = null;
 }
 
@@ -35,6 +49,9 @@ public class CronManager
   public static List<CronEntry> ZoneJobs = new();
   public static List<CronEntry> JoinJobs = new();
   public static float Interval = 10f;
+  public static bool LogJobs = true;
+  public static bool LogZone = true;
+  public static bool LogJoin = true;
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
   private static DateTime? Parse(string value, DateTime? next = null)
@@ -45,7 +62,7 @@ public class CronManager
   private static System.Random random = new();
   private static bool Roll(float chance)
   {
-    if (chance >= 1f) return true;
+    if (chance >= 1f || chance == 0f) return true;
     return random.NextDouble() < chance;
   }
   public static void Execute()
@@ -58,11 +75,13 @@ public class CronManager
         if (Roll(cron.chance))
         {
           Console.instance.TryRunCommand(cron.command);
-          CronJob.Log.LogInfo($"Executing: {cron.command}");
+          if (LogJobs)
+            CronJob.Log.LogInfo($"Executing: {cron.command}");
         }
         else
         {
-          CronJob.Log.LogInfo($"Skipped: {cron.command}");
+          if (LogJobs)
+            CronJob.Log.LogInfo($"Skipped: {cron.command}");
         }
         cron.next = Parse(cron.schedule);
       }
@@ -75,12 +94,13 @@ public class CronManager
     var time = DateTime.UtcNow;
     foreach (var cron in ZoneJobs)
     {
-      var run = false;
+      bool? run = null;
       if (cron.schedule != "")
         run = Parse(cron.schedule, previous) <= time;
+      if (run == false) continue;
       if (cron.inactive != 0f && previous.HasValue)
         run = (time - previous.Value).TotalMinutes >= cron.inactive;
-      if (!run) continue;
+      if (run != true) continue;
       var pos = ZoneSystem.instance.GetZonePos(zone);
       var cmd = cron.command
         .Replace("$$i", zone.x.ToString())
@@ -96,11 +116,13 @@ public class CronManager
       if (Roll(cron.chance))
       {
         Console.instance.TryRunCommand(cmd);
-        CronJob.Log.LogInfo($"Executing: {cmd}");
+        if (LogZone)
+          CronJob.Log.LogInfo($"Executing: {cmd}");
       }
       else
       {
-        CronJob.Log.LogInfo($"Skipped: {cmd}");
+        if (LogZone)
+          CronJob.Log.LogInfo($"Skipped: {cmd}");
       }
     }
   }
@@ -129,11 +151,13 @@ public class CronManager
       if (Roll(cron.chance))
       {
         Console.instance.TryRunCommand(cmd);
-        CronJob.Log.LogInfo($"Executing: {cmd}");
+        if (LogJoin)
+          CronJob.Log.LogInfo($"Executing: {cmd}");
       }
       else
       {
-        CronJob.Log.LogInfo($"Skipped: {cmd}");
+        if (LogJoin)
+          CronJob.Log.LogInfo($"Skipped: {cmd}");
       }
     }
 
@@ -185,6 +209,9 @@ public class CronManager
         foreach (var tz in TimeZoneInfo.GetSystemTimeZones())
           CronJob.Log.LogWarning($"{tz.Id} / {tz.DisplayName}");
       }
+      LogJobs = data.logJobs;
+      LogZone = data.logZone;
+      LogJoin = data.logJoin;
       Jobs = data.jobs;
       foreach (var cron in Jobs)
         cron.next = Parse(cron.schedule);

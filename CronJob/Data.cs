@@ -24,8 +24,7 @@ public class Data : MonoBehaviour
   public static IDeserializer Deserializer() => new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
   public static IDeserializer DeserializerUnSafe() => new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance)
   .IgnoreUnmatchedProperties().Build();
-  public static ISerializer Serializer() => new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).DisableAliases()
-    .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults).Build();
+  public static ISerializer Serializer() => new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).DisableAliases().Build();
 
   public static T Deserialize<T>(string raw, string fileName) where T : new()
   {
