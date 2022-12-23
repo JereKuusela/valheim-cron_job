@@ -18,6 +18,12 @@ Donations: [Buy me a computer](https://www.buymeacoffee.com/jerekuusela)
 
 # Changelog
 
+- v1.2
+	- Adds auto update for missing fields to the cron.yaml.
+	- Fixes loading messages being sent to the Discord connector.
+	- Fixes errors when deleting yaml files.
+	- Fixes emptry cron_track.yaml being created.
+
 - v1.1
 	- Adds support for join jobs.
 	- Adds support for Discord Connector.

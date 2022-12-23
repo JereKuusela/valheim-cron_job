@@ -23,15 +23,22 @@ public class TrackManager
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.SaveWorldThread)), HarmonyPostfix]
   public static void OnSave()
   {
+    if (Poked.Count == 0) {
+      if (File.Exists(FilePath))
+        File.Delete(FilePath);
+      return;
+    }
     var data = Poked.ToDictionary(kvp => $"{kvp.Key.x},{kvp.Key.y}", kvp => kvp.Value.Ticks);
     var yaml = Data.Serializer().Serialize(data);
     File.WriteAllText(FilePath, yaml);
   }
   public static void FromFile()
   {
+    Poked = new();
+    if (!File.Exists(FilePath)) return;
     try
     {
-      var data = Data.Read(FilePath, Data.Deserialize<Dictionary<string, long>>);
+      var data = Data.Read<Dictionary<string, long>>(FilePath, false);
       Poked = data.ToDictionary(
         kvp =>
         {

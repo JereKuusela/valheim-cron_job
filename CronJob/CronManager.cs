@@ -31,12 +31,12 @@ public class CronEntry
 {
   [DefaultValue("")]
   public string command = "";
-  [DefaultValue("")]
-  public string schedule = "";
-  [DefaultValue(0f)]
-  public float inactive = 0f;
-  [DefaultValue(1f)]
-  public float chance = 1f;
+  [DefaultValue(null)]
+  public string? schedule;
+  [DefaultValue(null)]
+  public float? inactive;
+  [DefaultValue(null)]
+  public float? chance;
   [DefaultValue(null)]
   public DateTime? next = null;
 }
@@ -63,9 +63,9 @@ public class CronManager
     return expression.GetNextOccurrence(next ?? DateTime.UtcNow, TimeZone);
   }
   private static System.Random random = new();
-  private static bool Roll(float chance)
+  private static bool Roll(float? chance)
   {
-    if (chance >= 1f || chance == 0f) return true;
+    if (chance == null || chance >= 1f || chance == 0f) return true;
     return random.NextDouble() < chance;
   }
   public static void Execute()
@@ -73,6 +73,7 @@ public class CronManager
     var time = DateTime.UtcNow;
     foreach (var cron in Jobs)
     {
+      if (cron.schedule == null) continue;
       if (cron.next <= time)
       {
         if (Roll(cron.chance))
@@ -103,11 +104,11 @@ public class CronManager
     foreach (var cron in ZoneJobs)
     {
       bool? run = null;
-      if (cron.schedule != "")
+      if (cron.schedule != null && cron.schedule != "")
         run = Parse(cron.schedule, previous) <= time;
       if (run == false) continue;
-      if (cron.inactive != 0f && previous.HasValue)
-        run = (time - previous.Value).TotalMinutes >= cron.inactive;
+      if (cron.inactive.HasValue && cron.inactive != 0f && previous.HasValue)
+        run = (time - previous.Value).TotalMinutes >= cron.inactive.Value;
       if (run != true) continue;
       var pos = ZoneSystem.instance.GetZonePos(zone);
       var cmd = cron.command
@@ -205,12 +206,15 @@ public class CronManager
   }
   public static void FromFile()
   {
+    if (!File.Exists(FilePath))
+      File.WriteAllText(FilePath, Data.Serializer().Serialize(new CronData()));
+    
     try
     {
-      var data = Data.Read(FilePath, Data.Deserialize<CronData>);
+      var data = Data.Read<CronData>(FilePath, true);
       Interval = data.interval;
       if (ParseTimeZone(data.timezone))
-        Log($"Selected time zone {TimeZone.Id} / {TimeZone.DisplayName}.");
+        CronJob.Log.LogInfo($"Selected time zone {TimeZone.Id} / {TimeZone.DisplayName}.");
       else
       {
         CronJob.Log.LogWarning($"Time zone {data.timezone} not found, using UTC. Possible time zones are:");
@@ -223,12 +227,12 @@ public class CronManager
       DiscordConnector = data.discordConnector;
       Jobs = data.jobs;
       foreach (var cron in Jobs)
-        cron.next = Parse(cron.schedule);
-      Log($"Reloading {Jobs.Count} cron jobs.");
+        cron.next = Parse(cron.schedule ?? "");
+      CronJob.Log.LogInfo($"Reloading {Jobs.Count} cron jobs.");
       ZoneJobs = data.zone;
-      Log($"Reloading {ZoneJobs.Count} zone cron jobs.");
+      CronJob.Log.LogInfo($"Reloading {ZoneJobs.Count} zone cron jobs.");
       JoinJobs = data.join;
-      Log($"Reloading {JoinJobs.Count} join jobs.");
+      CronJob.Log.LogInfo($"Reloading {JoinJobs.Count} join jobs.");
     }
     catch (Exception e)
     {
