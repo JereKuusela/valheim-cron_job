@@ -91,11 +91,13 @@ jobs:
 
 Dungeons reset after the zone hasn't been visited for 12 hours.
 
+Copper reset also includes terrain reset within 30 meters.
+
 ```
 zone:
   - command: locations_reset Crypt2,Crypt3,Crypt4,SunkenCrypt4 zone=$$i,$$j start
     inactive: 720
-  - command: vegetation_reset rock4_copper zone=$$i,$$j start
+  - command: vegetation_reset rock4_copper terrain=30 zone=$$i,$$j start
     inactive: 720
 ```
 
