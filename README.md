@@ -62,7 +62,9 @@ Recommended mods:
 - [Upgrade World](https://valheim.thunderstore.io/package/JereKuusela/Upgrade_World/) for reseting zones.
 
 
-## Weekly world reset / reboot
+## Weekly world reset / reboot announcement
+
+Note: This doesn't actually reboot the server. That must be configured from the server host.
 
 ```
 timezone: UTC
