@@ -23,7 +23,8 @@ public class TrackManager
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.SaveWorldThread)), HarmonyPostfix]
   public static void OnSave()
   {
-    if (Poked.Count == 0) {
+    if (Poked.Count == 0)
+    {
       if (File.Exists(FilePath))
         File.Delete(FilePath);
       return;

@@ -62,7 +62,7 @@ public class CronManager
     CronExpression expression = CronExpression.Parse(value);
     return expression.GetNextOccurrence(next ?? DateTime.UtcNow, TimeZone);
   }
-  private static System.Random random = new();
+  private static readonly Random random = new();
   private static bool Roll(float? chance)
   {
     if (chance == null || chance >= 1f || chance == 0f) return true;
@@ -149,8 +149,8 @@ public class CronManager
         .Replace("$$NAME", peer.m_playerName)
         .Replace("$$first", peer.m_playerName.Split(' ')[0])
         .Replace("$$FIRST", peer.m_playerName.Split(' ')[0])
-        .Replace("$$id", peer.m_characterID.m_userID.ToString())
-        .Replace("$$ID", peer.m_characterID.m_userID.ToString())
+        .Replace("$$id", peer.m_characterID.UserID.ToString())
+        .Replace("$$ID", peer.m_characterID.UserID.ToString())
         .Replace("$$x", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("$$X", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("$$y", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
@@ -208,7 +208,7 @@ public class CronManager
   {
     if (!File.Exists(FilePath))
       File.WriteAllText(FilePath, Data.Serializer().Serialize(new CronData()));
-    
+
     try
     {
       var data = Data.Read<CronData>(FilePath, true);
