@@ -138,9 +138,10 @@ public class CronManager
 
 
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_CharacterID)), HarmonyPostfix]
-  static void AddPeer(ZNet __instance, ZRpc rpc)
+  static void AddPeer(ZNet __instance, ZRpc rpc, ZDOID characterID)
   {
     if (!__instance.IsServer()) return;
+    if (characterID.IsNone()) return;
     var peer = __instance.GetPeer(rpc);
     foreach (var cron in JoinJobs)
     {
