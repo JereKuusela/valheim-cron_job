@@ -39,7 +39,7 @@ public class TrackManager
     if (!File.Exists(FilePath)) return;
     try
     {
-      var data = Data.Read<Dictionary<string, long>>(FilePath, false);
+      var data = Data.Read<Dictionary<string, long>>(FilePath);
       Poked = data.ToDictionary(
         kvp =>
         {

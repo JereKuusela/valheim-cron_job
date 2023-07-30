@@ -39,6 +39,8 @@ public class CronEntry
   public float? chance;
   [DefaultValue(null)]
   public DateTime? next = null;
+  [DefaultValue(null)]
+  public bool? log;
 }
 
 [HarmonyPatch]
@@ -79,12 +81,12 @@ public class CronManager
         if (Roll(cron.chance))
         {
           Console.instance.TryRunCommand(cron.command);
-          if (LogJobs)
+          if (cron.log ?? LogJobs)
             Log($"Executing: {cron.command}");
         }
         else
         {
-          if (LogJobs)
+          if (cron.log ?? LogJobs)
             Log($"Skipped: {cron.command}");
         }
         cron.next = Parse(cron.schedule);
@@ -125,12 +127,12 @@ public class CronManager
       if (Roll(cron.chance))
       {
         Console.instance.TryRunCommand(cmd);
-        if (LogZone)
+        if (cron.log ?? LogZone)
           Log($"Executing: {cmd}");
       }
       else
       {
-        if (LogZone)
+        if (cron.log ?? LogZone)
           Log($"Skipped: {cmd}");
       }
     }
@@ -161,12 +163,12 @@ public class CronManager
       if (Roll(cron.chance))
       {
         Console.instance.TryRunCommand(cmd);
-        if (LogJoin)
+        if (cron.log ?? LogJoin)
           Log($"Executing: {cmd}");
       }
       else
       {
-        if (LogJoin)
+        if (cron.log ?? LogJoin)
           Log($"Skipped: {cmd}");
       }
     }
@@ -212,7 +214,7 @@ public class CronManager
 
     try
     {
-      var data = Data.Read<CronData>(FilePath, true);
+      var data = Data.Read<CronData>(FilePath);
       Interval = data.interval;
       if (ParseTimeZone(data.timezone))
         CronJob.Log.LogInfo($"Selected time zone {TimeZone.Id} / {TimeZone.DisplayName}.");

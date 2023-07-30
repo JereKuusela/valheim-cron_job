@@ -38,21 +38,10 @@ public class Data : MonoBehaviour
   public static T Deserialize<T>(string raw) where T : new() => Deserializer().Deserialize<T>(raw);
   public static string Serialize<T>(T data) where T : new() => Serializer().Serialize(data ?? new());
 
-  private static void AutoMigrate<T>(string file, string original, T data) where T : new()
-  {
-    if (data == null) return;
-    var serialized = Serialize(data);
-    if (serialized == original) return;
-    CronJob.Log.LogInfo($"Adding missing fields to {Path.GetFileName(file)}.");
-    SkipWatch = true;
-    File.WriteAllText(file, serialized);
-  }
-  public static T Read<T>(string file, bool autoMigrate) where T : new()
+  public static T Read<T>(string file) where T : new()
   {
     var yaml = File.ReadAllText(file);
     var data = Deserialize<T>(yaml);
-    if (autoMigrate)
-      AutoMigrate(file, yaml, data);
     return data;
   }
 }

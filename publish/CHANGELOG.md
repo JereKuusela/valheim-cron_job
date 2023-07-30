@@ -1,3 +1,6 @@
+- v1.4
+  - Adds a new field `log` to the jobs.
+
 - v1.3
   - Updated for the new game version.
 

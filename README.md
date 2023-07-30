@@ -27,6 +27,7 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
 - command: Command to execute.
 - chance: Chance of executing the command. Default is 1 (100%).
 - schedule: Cron schedule. Default is never.
+- log: Whether to log the job. If missing, `logJobs` value is used.
 
 ## Zone jobs
 
@@ -34,6 +35,7 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
 - chance: Chance of executing the command. Default is 1 (100%).
 - schedule: Cron schedule. Default is never.
 - inactive: How many minutes the zone must have been inactive. Default is 0 (always).
+- log: Whether to log the job. If missing, `logZone` value is used.
 
 Command parameters: 
 - $$i: X index of the targeted zone. For example 2.
@@ -46,6 +48,7 @@ Command parameters:
 
 - command: Command to execute.
 - chance: Chance of executing the command. Default is 1 (100%).
+- log: Whether to log the job. If missing, `logJoin` value is used.
 
 Command parameters: 
 - $$name: Name of the player. For example "John Doe".
@@ -118,9 +121,12 @@ zone:
 
 ## Player greeting
 
+Never logged even if `logJoin` is true.
+
 ```
 join:
   - command: say Welcome to the server $$name!
+    log: false
 ```
 
 ## Player surprise
