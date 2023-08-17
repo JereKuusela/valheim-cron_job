@@ -4,11 +4,11 @@ Allows executing commands automatically on the server.
 
 Install on the server (modding [guide](https://youtu.be/WfvA5a5tNHo)).
 
-# Usage
+## Usage
 
 See [documentation](https://github.com/JereKuusela/valheim-cron_job/blob/main/README.md).
 
-# Credits
+## Credits
 
 Thanks for Azumatt for creating the mod icon!
 
