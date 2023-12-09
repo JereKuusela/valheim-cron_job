@@ -1,7 +1,6 @@
 
 using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using BepInEx;
 using UnityEngine;
 using YamlDotNet.Serialization;
@@ -14,7 +13,7 @@ public class Data : MonoBehaviour
   public static bool SkipWatch = false;
   public static void SetupWatcher(string pattern, Action action)
   {
-    var skippableAction = () =>
+    void skippableAction()
     {
       if (SkipWatch)
       {
@@ -22,7 +21,7 @@ public class Data : MonoBehaviour
         return;
       }
       action();
-    };
+    }
     FileSystemWatcher watcher = new(Paths.ConfigPath, pattern);
     watcher.Created += (s, e) => skippableAction();
     watcher.Changed += (s, e) => skippableAction();

@@ -1,3 +1,11 @@
+- v1.6
+  - Adds a warning for zone jobs without any parameters.
+  - Adds a new field `avoidPlayers` to not run zone jobs when players are nearby.
+  - Adds support for seconds in the cron schedule.
+  - Adds new fields `biomes`, `locations`, `objects` and `bannedObjects` to filter zone jobs.
+  - Changes the parameter format from `$$` to `<>`. Old commands still work but cause a warning.
+  - Removes the field `inactive` because it caused confusion and didn't work with multiple jobs per zone.
+
 - v1.5
   - Fixed for the new update.
 

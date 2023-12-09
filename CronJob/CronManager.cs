@@ -1,47 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using BepInEx;
 using Cronos;
 using HarmonyLib;
 
 namespace CronJob;
 
-public class CronData
-{
-  [DefaultValue("UTC")]
-  public string timezone = "UTC";
-  [DefaultValue(10f)]
-  public float interval = 10f;
-  public List<CronEntry> jobs = new();
-  public List<CronEntry> zone = new();
-  public List<CronEntry> join = new();
-  [DefaultValue(true)]
-  public bool logJobs = true;
-  [DefaultValue(true)]
-  public bool logZone = true;
-  [DefaultValue(true)]
-  public bool logJoin = true;
-  [DefaultValue(true)]
-  public bool discordConnector = true;
-}
-public class CronEntry
-{
-  [DefaultValue("")]
-  public string command = "";
-  [DefaultValue(null)]
-  public string? schedule;
-  [DefaultValue(null)]
-  public float? inactive;
-  [DefaultValue(null)]
-  public float? chance;
-  [DefaultValue(null)]
-  public DateTime? next = null;
-  [DefaultValue(null)]
-  public bool? log;
-}
 
 [HarmonyPatch]
 public class CronManager
@@ -49,19 +16,21 @@ public class CronManager
   public static string FileName = "cron.yaml";
   public static string FilePath = Path.Combine(Paths.ConfigPath, FileName);
 
-  public static List<CronEntry> Jobs = new();
-  public static List<CronEntry> ZoneJobs = new();
-  public static List<CronEntry> JoinJobs = new();
+  public static List<CronGeneralJob> Jobs = [];
+  public static List<CronZoneJob> ZoneJobs = [];
+  public static List<CronJoinJob> JoinJobs = [];
   public static float Interval = 10f;
   public static bool LogJobs = true;
   public static bool LogZone = true;
   public static bool LogJoin = true;
   public static bool DiscordConnector = true;
+  public static DateTime Previous = DateTime.UtcNow;
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
   private static DateTime? Parse(string value, DateTime? next = null)
   {
-    CronExpression expression = CronExpression.Parse(value);
+    var format = value.Split(' ').Length == 6 ? CronFormat.IncludeSeconds : CronFormat.Standard;
+    CronExpression expression = CronExpression.Parse(value, format);
     return expression.GetNextOccurrence(next ?? DateTime.UtcNow, TimeZone);
   }
   private static readonly Random random = new();
@@ -75,24 +44,20 @@ public class CronManager
     var time = DateTime.UtcNow;
     foreach (var cron in Jobs)
     {
-      if (cron.schedule == null) continue;
-      if (cron.next <= time)
+      if (time < Parse(cron.Schedule, Previous)) continue;
+      if (Roll(cron.Chance))
       {
-        if (Roll(cron.chance))
-        {
-          Console.instance.TryRunCommand(cron.command);
-          if (cron.log ?? LogJobs)
-            Log($"Executing: {cron.command}");
-        }
-        else
-        {
-          if (cron.log ?? LogJobs)
-            Log($"Skipped: {cron.command}");
-        }
-        cron.next = Parse(cron.schedule);
+        Console.instance.TryRunCommand(cron.Command);
+        if (cron.Log ?? LogJobs)
+          Log($"Executing: {cron.Command}");
+      }
+      else
+      {
+        if (cron.Log ?? LogJobs)
+          Log($"Skipped: {cron.Command}");
       }
     }
-
+    Previous = time;
   }
   private static void Log(string message)
   {
@@ -100,42 +65,67 @@ public class CronManager
     if (DiscordConnector)
       DiscordHook.SendMessage(message);
   }
-  public static void Execute(Vector2i zone, DateTime? previous)
+  public static bool Execute(Vector2i zone, bool hasPlayer, DateTime? previous)
   {
     var time = DateTime.UtcNow;
-    foreach (var cron in ZoneJobs)
+    var toRun = ZoneJobs.Where(cron => !cron.AvoidPlayers || !hasPlayer).ToList();
+    if (toRun.Count == 0) return false;
+    var zs = ZoneSystem.instance;
+    var zm = ZDOMan.instance;
+    var wg = WorldGenerator.instance;
+    foreach (var cron in toRun)
     {
-      bool? run = null;
-      if (cron.schedule != null && cron.schedule != "")
-        run = Parse(cron.schedule, previous) <= time;
-      if (run == false) continue;
-      if (cron.inactive.HasValue && cron.inactive != 0f && previous.HasValue)
-        run = (time - previous.Value).TotalMinutes >= cron.inactive.Value;
-      if (run != true) continue;
-      var pos = ZoneSystem.instance.GetZonePos(zone);
-      var cmd = cron.command
-        .Replace("$$i", zone.x.ToString())
-        .Replace("$$I", zone.x.ToString())
-        .Replace("$$j", zone.y.ToString())
-        .Replace("$$J", zone.y.ToString())
-        .Replace("$$x", pos.x.ToString())
-        .Replace("$$X", pos.x.ToString())
-        .Replace("$$y", pos.y.ToString())
-        .Replace("$$Y", pos.y.ToString())
-        .Replace("$$z", pos.z.ToString())
-        .Replace("$$Z", pos.z.ToString());
-      if (Roll(cron.chance))
+      if (time < Parse(cron.Schedule, previous)) continue;
+      var pos = zs.GetZonePos(zone);
+      if (cron.Biomes != 0)
+      {
+        if ((wg.GetBiome(pos.x, pos.y) & cron.Biomes) == 0 &&
+         (wg.GetBiome(pos.x + 32f, pos.y + 32f) & cron.Biomes) == 0 &&
+         (wg.GetBiome(pos.x + 32f, pos.y - 32f) & cron.Biomes) == 0 &&
+         (wg.GetBiome(pos.x - 32f, pos.y + 32f) & cron.Biomes) == 0 &&
+         (wg.GetBiome(pos.x - 32f, pos.y + 32f) & cron.Biomes) == 0)
+          continue;
+      }
+      if (cron.Locations.Count > 0)
+      {
+        if (!zs.m_locationInstances.TryGetValue(zone, out var location)) continue;
+        if (!cron.Locations.Contains(location.m_location?.m_prefabName ?? "")) continue;
+      }
+      if (cron.Objects.Count > 0)
+      {
+        var sector = zm.SectorToIndex(zone);
+        if (sector < 0 || sector >= zm.m_objectsBySector.Length) continue;
+        var zdos = zm.m_objectsBySector[sector];
+        if (zdos == null) continue;
+        if (zdos.All(zdo => !cron.Objects.Contains(zdo.m_prefab))) continue;
+      }
+      if (cron.BannedObjects.Count > 0)
+      {
+        var sector = zm.SectorToIndex(zone);
+        if (sector < 0 || sector >= zm.m_objectsBySector.Length) continue;
+        var zdos = zm.m_objectsBySector[sector];
+        if (zdos == null) continue;
+        if (zdos.Any(zdo => cron.BannedObjects.Contains(zdo.m_prefab))) continue;
+      }
+      var cmd = cron.Command
+        .Replace("<i>", zone.x.ToString())
+        .Replace("<j>", zone.y.ToString())
+        .Replace("<x>", pos.x.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("<y>", pos.y.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("<z>", pos.z.ToString("F2", CultureInfo.InvariantCulture));
+      if (Roll(cron.Chance))
       {
         Console.instance.TryRunCommand(cmd);
-        if (cron.log ?? LogZone)
+        if (cron.Log ?? LogZone)
           Log($"Executing: {cmd}");
       }
       else
       {
-        if (cron.log ?? LogZone)
+        if (cron.Log ?? LogZone)
           Log($"Skipped: {cmd}");
       }
     }
+    return true;
   }
 
 
@@ -147,28 +137,22 @@ public class CronManager
     var peer = __instance.GetPeer(rpc);
     foreach (var cron in JoinJobs)
     {
-      var cmd = cron.command
-        .Replace("$$name", peer.m_playerName)
-        .Replace("$$NAME", peer.m_playerName)
-        .Replace("$$first", peer.m_playerName.Split(' ')[0])
-        .Replace("$$FIRST", peer.m_playerName.Split(' ')[0])
-        .Replace("$$id", peer.m_characterID.UserID.ToString())
-        .Replace("$$ID", peer.m_characterID.UserID.ToString())
-        .Replace("$$x", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("$$X", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("$$y", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("$$Y", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("$$z", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("$$Z", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
-      if (Roll(cron.chance))
+      var cmd = cron.Command
+        .Replace("{name}", peer.m_playerName)
+        .Replace("{first}", peer.m_playerName.Split(' ')[0])
+        .Replace("{id}", peer.m_characterID.UserID.ToString())
+        .Replace("{x}", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("{Y}", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("{z}", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
+      if (Roll(cron.Chance))
       {
         Console.instance.TryRunCommand(cmd);
-        if (cron.log ?? LogJoin)
+        if (cron.Log ?? LogJoin)
           Log($"Executing: {cmd}");
       }
       else
       {
-        if (cron.log ?? LogJoin)
+        if (cron.Log ?? LogJoin)
           Log($"Skipped: {cmd}");
       }
     }
@@ -227,14 +211,21 @@ public class CronManager
       LogJobs = data.logJobs;
       LogZone = data.logZone;
       LogJoin = data.logJoin;
+      data.join.ForEach(ReplaceParameters);
+      data.zone.ForEach(ReplaceParameters);
+      data.jobs.ForEach(ReplaceParameters);
+      data.zone.ForEach(VerifyParameterExists);
+      data.zone.ForEach(VerifyInactiveIsNull);
+      data.jobs.ForEach(VerifyInactiveIsNull);
+      data.jobs = SkipWithoutSchedule(data.jobs);
+      data.zone = SkipWithoutSchedule(data.zone);
+
       DiscordConnector = data.discordConnector;
-      Jobs = data.jobs;
-      foreach (var cron in Jobs)
-        cron.next = Parse(cron.schedule ?? "");
+      Jobs = data.jobs.Select(s => new CronGeneralJob(s)).ToList();
       CronJob.Log.LogInfo($"Reloading {Jobs.Count} cron jobs.");
-      ZoneJobs = data.zone;
+      ZoneJobs = data.zone.Select(s => new CronZoneJob(s)).ToList();
       CronJob.Log.LogInfo($"Reloading {ZoneJobs.Count} zone cron jobs.");
-      JoinJobs = data.join;
+      JoinJobs = data.join.Select(s => new CronJoinJob(s)).ToList();
       CronJob.Log.LogInfo($"Reloading {JoinJobs.Count} join jobs.");
     }
     catch (Exception e)
@@ -242,6 +233,47 @@ public class CronManager
       CronJob.Log.LogError(e.StackTrace);
     }
   }
+  private static void ReplaceParameters(CronEntryData entry)
+  {
+    if (!entry.command.Contains("$$")) return;
+    CronJob.Log.LogWarning($"$$ is deprecated, use <> instead. Command: {entry.command}");
+    entry.command = entry.command
+      .Replace("$$i", "<i>")
+      .Replace("$$I", "<i>")
+      .Replace("$$j", "<j>")
+      .Replace("$$J", "<j>")
+      .Replace("$$x", "<x>")
+      .Replace("$$X", "<x>")
+      .Replace("$$y", "<y>")
+      .Replace("$$Y", "<y>")
+      .Replace("$$z", "<z>")
+      .Replace("$$Z", "<>>")
+      .Replace("$$id", "<id>")
+      .Replace("$$ID", "<id>")
+      .Replace("$$name", "<name>")
+      .Replace("$$NAME", "<name>")
+      .Replace("$$first", "<first>")
+      .Replace("$$FIRST", "<first>");
+  }
+  private static void VerifyParameterExists(CronEntryData entry)
+  {
+    if (entry.command.Contains("<") || entry.command.Contains(">")) return;
+    CronJob.Log.LogWarning($"Command {entry.command} does not contain parameters, should this be general job instead?");
+  }
+  private static void VerifyInactiveIsNull(CronEntryData entry)
+  {
+    if (entry.inactive == null) return;
+    CronJob.Log.LogWarning($"Inactive time is deprecated and can be removed. Command: {entry.command}");
+  }
+  private static List<CronEntryData> SkipWithoutSchedule(List<CronEntryData> entries) =>
+    entries.Where(entry =>
+    {
+      var valid = entry.schedule != null && entry.schedule != "";
+      if (!valid)
+        CronJob.Log.LogWarning($"Command {entry.command} does not have a schedule, skipping.");
+      return valid;
+    }).ToList();
+
   public static void SetupWatcher()
   {
     Data.SetupWatcher(FileName, FromFile);
