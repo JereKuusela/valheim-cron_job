@@ -138,12 +138,12 @@ public class CronManager
     foreach (var cron in JoinJobs)
     {
       var cmd = cron.Command
-        .Replace("{name}", peer.m_playerName)
-        .Replace("{first}", peer.m_playerName.Split(' ')[0])
-        .Replace("{id}", peer.m_characterID.UserID.ToString())
-        .Replace("{x}", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("{Y}", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("{z}", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
+        .Replace("<name>", peer.m_playerName)
+        .Replace("<first>", peer.m_playerName.Split(' ')[0])
+        .Replace("<id>", peer.m_characterID.UserID.ToString())
+        .Replace("<x>", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("<y>", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
+        .Replace("<z>", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
       if (Roll(cron.Chance))
       {
         Console.instance.TryRunCommand(cmd);

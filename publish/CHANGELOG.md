@@ -1,3 +1,6 @@
+- v1.7
+  - Fixes parameters not working for join jobs.
+
 - v1.6
   - Adds a warning for zone jobs without any parameters.
   - Adds a new field `avoidPlayers` to not run zone jobs when players are nearby.
