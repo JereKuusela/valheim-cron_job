@@ -1,3 +1,8 @@
+- v1.9
+  - Adds support for changing the Discord Connector message type.
+  - Adds a new setting "logSkipped" to allow disabling logging of skipped jobs.
+  - Changes the default Discord Connector mesasge type from "Other" to "cronjob".
+
 - v1.8
   - Fixed for the new update.
 

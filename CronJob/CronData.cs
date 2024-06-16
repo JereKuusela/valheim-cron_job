@@ -22,7 +22,9 @@ public class CronData
   [DefaultValue(true)]
   public bool logJoin = true;
   [DefaultValue(true)]
-  public bool discordConnector = true;
+  public bool logSkipped = true;
+  [DefaultValue("true")]
+  public string discordConnector = "true";
 }
 
 public class CronEntryData

@@ -23,7 +23,8 @@ public class CronManager
   public static bool LogJobs = true;
   public static bool LogZone = true;
   public static bool LogJoin = true;
-  public static bool DiscordConnector = true;
+  public static bool LogSkipped = true;
+  public static string DiscordConnector = "CronJob";
   public static DateTime Previous = DateTime.UtcNow;
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
@@ -51,7 +52,7 @@ public class CronManager
         if (cron.Log ?? LogJobs)
           Log($"Executing: {cron.Command}");
       }
-      else
+      else if (LogSkipped)
       {
         if (cron.Log ?? LogJobs)
           Log($"Skipped: {cron.Command}");
@@ -62,8 +63,8 @@ public class CronManager
   private static void Log(string message)
   {
     CronJob.Log.LogInfo(message);
-    if (DiscordConnector)
-      DiscordHook.SendMessage(message);
+    if (DiscordConnector != "")
+      DiscordHook.SendMessage(DiscordConnector, message);
   }
   public static bool Execute(Vector2i zone, bool hasPlayer, DateTime? previous)
   {
@@ -119,7 +120,7 @@ public class CronManager
         if (cron.Log ?? LogZone)
           Log($"Executing: {cmd}");
       }
-      else
+      else if (LogSkipped)
       {
         if (cron.Log ?? LogZone)
           Log($"Skipped: {cmd}");
@@ -150,7 +151,7 @@ public class CronManager
         if (cron.Log ?? LogJoin)
           Log($"Executing: {cmd}");
       }
-      else
+      else if (LogSkipped)
       {
         if (cron.Log ?? LogJoin)
           Log($"Skipped: {cmd}");
@@ -211,6 +212,7 @@ public class CronManager
       LogJobs = data.logJobs;
       LogZone = data.logZone;
       LogJoin = data.logJoin;
+      LogSkipped = data.logSkipped;
       data.join.ForEach(ReplaceParameters);
       data.zone.ForEach(ReplaceParameters);
       data.jobs.ForEach(ReplaceParameters);
@@ -221,6 +223,10 @@ public class CronManager
       data.zone = SkipWithoutSchedule(data.zone);
 
       DiscordConnector = data.discordConnector;
+      if (DiscordConnector == "true")
+        DiscordConnector = "cronjob";
+      else if (DiscordConnector == "false")
+        DiscordConnector = "";
       Jobs = data.jobs.Select(s => new CronGeneralJob(s)).ToList();
       CronJob.Log.LogInfo($"Reloading {Jobs.Count} cron jobs.");
       ZoneJobs = data.zone.Select(s => new CronZoneJob(s)).ToList();
