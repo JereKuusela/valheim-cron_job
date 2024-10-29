@@ -77,7 +77,7 @@ public class CronManager
     foreach (var cron in toRun)
     {
       if (time < Parse(cron.Schedule, previous)) continue;
-      var pos = zs.GetZonePos(zone);
+      var pos = ZoneSystem.GetZonePos(zone);
       if (cron.Biomes != 0)
       {
         if ((wg.GetBiome(pos.x, pos.y) & cron.Biomes) == 0 &&

@@ -80,7 +80,7 @@ public class TrackManager
   private static void TrackPeer(HashSet<Vector2i> zones, Vector3 pos)
   {
     var zs = ZoneSystem.instance;
-    var middle = zs.GetZone(pos);
+    var middle = ZoneSystem.GetZone(pos);
     var num = zs.m_activeArea + zs.m_activeDistantArea;
     for (var i = middle.y - num; i <= middle.y + num; i++)
     {
@@ -105,9 +105,9 @@ public class TrackManager
   {
     HashSet<Vector2i> zones = [];
     if (!ZNet.instance.IsDedicated())
-      zones.Add(ZoneSystem.instance.GetZone(ZNet.instance.GetReferencePosition()));
+      zones.Add(ZoneSystem.GetZone(ZNet.instance.GetReferencePosition()));
     foreach (var peer in ZNet.instance.GetPeers())
-      zones.Add(ZoneSystem.instance.GetZone(peer.GetRefPos()));
+      zones.Add(ZoneSystem.GetZone(peer.GetRefPos()));
     return zones;
   }
 }

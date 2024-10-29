@@ -9,7 +9,7 @@ public class CronJob : BaseUnityPlugin
 {
   public const string GUID = "cron_job";
   public const string NAME = "Cron Job";
-  public const string VERSION = "1.9";
+  public const string VERSION = "1.10";
   private static ManualLogSource? Logs;
   public static ManualLogSource Log => Logs!;
   public void Awake()
