@@ -136,13 +136,15 @@ public class CronManager
     return true;
   }
 
-
+  private static HashSet<ZNetPeer> HandledPeers = [];
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_CharacterID)), HarmonyPostfix]
   static void AddPeer(ZNet __instance, ZRpc rpc, ZDOID characterID)
   {
     if (!__instance.IsServer()) return;
     if (characterID.IsNone()) return;
     var peer = __instance.GetPeer(rpc);
+    if (HandledPeers.Contains(peer)) return;
+    HandledPeers.Add(peer);
     foreach (var cron in JoinJobs)
     {
       var cmds = cron.Commands.Select(cmd => cmd
@@ -155,6 +157,13 @@ public class CronManager
       RunJob(cmds.ToArray(), cron.Chance, cron.Log);
     }
 
+  }
+
+
+  [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect)), HarmonyPostfix]
+  static void Disconnect(ZNetPeer peer)
+  {
+    HandledPeers.Remove(peer);
   }
 
   [HarmonyPatch(typeof(Chat), nameof(Chat.Awake)), HarmonyPostfix]

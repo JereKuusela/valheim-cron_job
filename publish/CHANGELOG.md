@@ -3,6 +3,7 @@
   - This prevents running all jobs on server restart.
   - Adds a new field `useGameTime` to run jobs based on the in-game time.
   - Adds a new field `commands` to run multiple commands.
+  - Possibly fixes join job triggering on player respawn.
 
 - v1.10
   - Fixed for the new update.

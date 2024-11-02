@@ -73,16 +73,17 @@ public class TrackManager
   }
   public static Dictionary<Vector2i, DateTime> ZoneTimestamps = [];
 
+  private static readonly HashSet<Vector2i> Zones = [];
   public static void Track()
   {
     if (CronManager.ZoneJobs.Count == 0) return;
     var hasPlayer = GetPlayerZones();
-    HashSet<Vector2i> zones = [];
+    Zones.Clear();
     if (!ZNet.instance.IsDedicated())
-      TrackPeer(zones, ZNet.instance.GetReferencePosition());
+      TrackPeer(Zones, ZNet.instance.GetReferencePosition());
     foreach (var peer in ZNet.instance.GetPeers())
-      TrackPeer(zones, peer.GetRefPos());
-    foreach (var zone in zones)
+      TrackPeer(Zones, peer.GetRefPos());
+    foreach (var zone in Zones)
       Poke(zone, hasPlayer.Contains(zone));
   }
 
@@ -108,22 +109,15 @@ public class TrackManager
       }
     }
   }
-  private static HashSet<Vector2i> GetActiveZones()
-  {
-    HashSet<Vector2i> zones = [];
-    if (!ZNet.instance.IsDedicated())
-      TrackPeer(zones, ZNet.instance.GetReferencePosition());
-    foreach (var peer in ZNet.instance.GetPeers())
-      TrackPeer(zones, peer.GetRefPos());
-    return zones;
-  }
+
+  private static readonly HashSet<Vector2i> PlayerZones = [];
   private static HashSet<Vector2i> GetPlayerZones()
   {
-    HashSet<Vector2i> zones = [];
+    PlayerZones.Clear();
     if (!ZNet.instance.IsDedicated())
-      zones.Add(ZoneSystem.GetZone(ZNet.instance.GetReferencePosition()));
+      PlayerZones.Add(ZoneSystem.GetZone(ZNet.instance.GetReferencePosition()));
     foreach (var peer in ZNet.instance.GetPeers())
-      zones.Add(ZoneSystem.GetZone(peer.GetRefPos()));
-    return zones;
+      PlayerZones.Add(ZoneSystem.GetZone(peer.GetRefPos()));
+    return PlayerZones;
   }
 }
