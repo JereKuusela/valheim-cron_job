@@ -39,6 +39,8 @@ public class CronEntryData
   public float? chance;
   [DefaultValue(false)]
   public bool avoidPlayers = false;
+  [DefaultValue(false)]
+  public bool useGameTime = false;
   [DefaultValue(null)]
   public bool? log;
   [DefaultValue("")]
@@ -54,10 +56,12 @@ public class CronEntryData
 public class CronGeneralJob(CronEntryData data) : CronBaseJob(data)
 {
   public string Schedule = data.schedule;
+  public bool UseGameTime = data.useGameTime;
 }
 public class CronZoneJob(CronEntryData data) : CronBaseJob(data)
 {
   public string Schedule = data.schedule;
+  public bool UseGameTime = data.useGameTime;
   public bool AvoidPlayers = data.avoidPlayers;
   public Heightmap.Biome Biomes = Parse.ToBiomes(data.biomes);
   public HashSet<string> Locations = Parse.ToSet(data.locations);
