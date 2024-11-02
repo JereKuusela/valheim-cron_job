@@ -31,6 +31,8 @@ public class CronEntryData
 {
   [DefaultValue("")]
   public string command = "";
+  [DefaultValue(null)]
+  public string[]? commands;
   [DefaultValue("")]
   public string schedule = "";
   [DefaultValue(null)]
@@ -61,7 +63,6 @@ public class CronGeneralJob(CronEntryData data) : CronBaseJob(data)
 public class CronZoneJob(CronEntryData data) : CronBaseJob(data)
 {
   public string Schedule = data.schedule;
-  public bool UseGameTime = data.useGameTime;
   public bool AvoidPlayers = data.avoidPlayers;
   public Heightmap.Biome Biomes = Parse.ToBiomes(data.biomes);
   public HashSet<string> Locations = Parse.ToSet(data.locations);
@@ -73,7 +74,7 @@ public class CronJoinJob(CronEntryData data) : CronBaseJob(data)
 }
 public abstract class CronBaseJob(CronEntryData data)
 {
-  public string Command = data.command;
+  public string[] Commands = data.commands ?? [data.command];
   public float? Chance = data.chance;
   public bool? Log = data.log;
 }

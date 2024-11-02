@@ -26,6 +26,7 @@ public class CronManager
   public static bool LogSkipped = true;
   public static string DiscordConnector = "CronJob";
   public static DateTime Previous = DateTime.UtcNow;
+  public static DateTime PreviousGameTime = new(Year2000, DateTimeKind.Utc);
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
   private static DateTime? Parse(string value, DateTime? next = null)
@@ -40,25 +41,41 @@ public class CronManager
     if (chance == null || chance >= 1f || chance == 0f) return true;
     return random.NextDouble() < chance;
   }
+  private static readonly long Year2000 = new DateTime(2000, 1, 1).Ticks;
   public static void Execute()
   {
     var time = DateTime.UtcNow;
+    DateTime gameTime = new(Year2000 + (long)(ZNet.instance.GetTimeSeconds() / EnvMan.instance.m_dayLengthSec * TimeSpan.TicksPerDay), DateTimeKind.Utc);
     foreach (var cron in Jobs)
     {
-      if (time < Parse(cron.Schedule, Previous)) continue;
-      if (Roll(cron.Chance))
-      {
-        Console.instance.TryRunCommand(cron.Command);
-        if (cron.Log ?? LogJobs)
-          Log($"Executing: {cron.Command}");
-      }
-      else if (LogSkipped)
-      {
-        if (cron.Log ?? LogJobs)
-          Log($"Skipped: {cron.Command}");
-      }
+      var t = cron.UseGameTime ? gameTime : time;
+      var p = cron.UseGameTime ? PreviousGameTime : Previous;
+      if (t < Parse(cron.Schedule, p)) continue;
+      RunJob(cron.Commands, cron.Chance, cron.Log);
     }
     Previous = time;
+    PreviousGameTime = gameTime;
+  }
+  private static void RunJob(string[] commands, float? chance, bool? log)
+  {
+    if (Roll(chance))
+    {
+      foreach (var cmd in commands)
+      {
+        Console.instance.TryRunCommand(cmd);
+        if (log ?? LogJobs)
+          Log($"Executing: {cmd}");
+      }
+
+    }
+    else if (LogSkipped)
+    {
+      foreach (var cmd in commands)
+      {
+        if (log ?? LogJobs)
+          Log($"Skipped: {cmd}");
+      }
+    }
   }
   private static void Log(string message)
   {
@@ -68,9 +85,9 @@ public class CronManager
   }
   public static bool Execute(Vector2i zone, bool hasPlayer, DateTime? previous)
   {
-    var time = DateTime.UtcNow;
     var toRun = ZoneJobs.Where(cron => !cron.AvoidPlayers || !hasPlayer).ToList();
     if (toRun.Count == 0) return false;
+    var time = DateTime.UtcNow;
     var zs = ZoneSystem.instance;
     var zm = ZDOMan.instance;
     var wg = WorldGenerator.instance;
@@ -108,23 +125,13 @@ public class CronManager
         if (zdos == null) continue;
         if (zdos.Any(zdo => cron.BannedObjects.Contains(zdo.m_prefab))) continue;
       }
-      var cmd = cron.Command
+      var commands = cron.Commands.Select(cmd => cmd
         .Replace("<i>", zone.x.ToString())
         .Replace("<j>", zone.y.ToString())
         .Replace("<x>", pos.x.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("<y>", pos.y.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("<z>", pos.z.ToString("F2", CultureInfo.InvariantCulture));
-      if (Roll(cron.Chance))
-      {
-        Console.instance.TryRunCommand(cmd);
-        if (cron.Log ?? LogZone)
-          Log($"Executing: {cmd}");
-      }
-      else if (LogSkipped)
-      {
-        if (cron.Log ?? LogZone)
-          Log($"Skipped: {cmd}");
-      }
+        .Replace("<z>", pos.z.ToString("F2", CultureInfo.InvariantCulture)));
+      RunJob(commands.ToArray(), cron.Chance, cron.Log);
     }
     return true;
   }
@@ -138,24 +145,14 @@ public class CronManager
     var peer = __instance.GetPeer(rpc);
     foreach (var cron in JoinJobs)
     {
-      var cmd = cron.Command
+      var cmds = cron.Commands.Select(cmd => cmd
         .Replace("<name>", peer.m_playerName)
         .Replace("<first>", peer.m_playerName.Split(' ')[0])
         .Replace("<id>", peer.m_characterID.UserID.ToString())
         .Replace("<x>", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("<y>", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
-        .Replace("<z>", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture));
-      if (Roll(cron.Chance))
-      {
-        Console.instance.TryRunCommand(cmd);
-        if (cron.Log ?? LogJoin)
-          Log($"Executing: {cmd}");
-      }
-      else if (LogSkipped)
-      {
-        if (cron.Log ?? LogJoin)
-          Log($"Skipped: {cmd}");
-      }
+        .Replace("<z>", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture)));
+      RunJob(cmds.ToArray(), cron.Chance, cron.Log);
     }
 
   }

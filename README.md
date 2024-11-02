@@ -31,13 +31,17 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
 ## Jobs
 
 - command: Command to execute.
+- commands: List of commands to execute.
 - schedule: Cron schedule. If schedule starts with *, you must use "" around the it.
+- useGameTime: If true, the schedule is based on the in-game time. Default is false.
+  - In game time starts from year 2000.
 - chance: Chance of executing the command. Default is 1 (100%).
 - log: Whether to log the job. If missing, `logJobs` value is used.
 
 ## Zone jobs
 
 - command: Command to execute.
+- commands: List of commands to execute.
 - schedule: Cron schedule. If schedule starts with *, you must use "" around the it.
 - chance: Chance of executing the command. Default is 1 (100%).
 - log: Whether to log the job. If missing, `logZone` value is used.
@@ -64,6 +68,7 @@ Command parameters:
 ## Join jobs
 
 - command: Command to execute.
+- commands: List of commands to execute.
 - chance: Chance of executing the command. Default is 1 (100%).
 - log: Whether to log the job. If missing, `logJoin` value is used.
 
@@ -99,9 +104,9 @@ jobs:
     schedule: "57 2 * * 1"
   - command: broadcast center <color=orange>WARNING - WORLD RESET IN 2 MINUTES - PLEASE LOG OUT</color>
     schedule: "58 2 * * 1"
-  - command: broadcast center <color=orange>WARNING - WORLD RESET IN 1 MINUTE - PLEASE LOG OUT</color>
-    schedule: "59 2 * * 1"
-  - command: save
+  - commands:
+    - broadcast center <color=orange>WARNING - WORLD RESET IN 1 MINUTE - PLEASE LOG OUT</color>
+    - save
     schedule: "59 2 * * 1"
     # Resets the world.
   - command: zones_reset start
@@ -126,9 +131,9 @@ jobs:
     schedule: "57 2 * * 1"
   - command: broadcast center <color=orange>WARNING - REBOOT IN 2 MINUTES - PLEASE LOG OUT</color>
     schedule: "58 2 * * 1"
-  - command: broadcast center <color=orange>WARNING - REBOOT IN 1 MINUTE - PLEASE LOG OUT</color>
-    schedule: "59 2 * * 1"
-  - command: save
+  - commands: 
+    - broadcast center <color=orange>WARNING - REBOOT IN 1 MINUTE - PLEASE LOG OUT</color>
+    - save
     schedule: "59 2 * * 1"
     # Hosting service configured to reboot at 03:00 on Monday.
 ```

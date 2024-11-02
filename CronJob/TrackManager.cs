@@ -11,35 +11,51 @@ namespace CronJob;
 [HarmonyPatch]
 public class TrackManager
 {
-  public static string FileName = "cron_track.yaml";
-  public static string FilePath = Path.Combine(Paths.ConfigPath, FileName);
+  public static string FileNameJob = "cron_last.yaml";
+  public static string FileNameZone = "cron_track.yaml";
+  public static string FilePathJob = Path.Combine(Paths.ConfigPath, FileNameJob);
+  public static string FilePathZone = Path.Combine(Paths.ConfigPath, FileNameZone);
 
   [HarmonyPatch(typeof(Chat), nameof(Chat.Awake)), HarmonyPostfix]
   public static void ChatAwake()
   {
-    if (File.Exists(FilePath))
-      FromFile();
+    if (File.Exists(FilePathJob))
+    {
+      var jobData = Data.Read<Dictionary<string, long>>(FilePathJob);
+      if (jobData.TryGetValue("world", out var world))
+        CronManager.Previous = new DateTime(world, DateTimeKind.Utc);
+      if (jobData.TryGetValue("game", out var game))
+        CronManager.PreviousGameTime = new DateTime(game, DateTimeKind.Utc);
+    }
+    if (File.Exists(FilePathZone))
+      ZoneTrackFromFile();
   }
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.SaveWorldThread)), HarmonyPostfix]
   public static void OnSave()
   {
+    var jobData = new Dictionary<string, long>() {
+      { "world", CronManager.Previous.Ticks },
+      { "game", CronManager.PreviousGameTime.Ticks }
+    };
+    var yaml = Data.Serializer().Serialize(jobData);
+    File.WriteAllText(FilePathJob, yaml);
     if (ZoneTimestamps.Count == 0)
     {
-      if (File.Exists(FilePath))
-        File.Delete(FilePath);
+      if (File.Exists(FilePathZone))
+        File.Delete(FilePathZone);
       return;
     }
     var data = ZoneTimestamps.ToDictionary(kvp => $"{kvp.Key.x},{kvp.Key.y}", kvp => kvp.Value.Ticks);
-    var yaml = Data.Serializer().Serialize(data);
-    File.WriteAllText(FilePath, yaml);
+    yaml = Data.Serializer().Serialize(data);
+    File.WriteAllText(FilePathZone, yaml);
   }
-  public static void FromFile()
+  public static void ZoneTrackFromFile()
   {
     ZoneTimestamps = [];
-    if (!File.Exists(FilePath)) return;
+    if (!File.Exists(FilePathZone)) return;
     try
     {
-      var data = Data.Read<Dictionary<string, long>>(FilePath);
+      var data = Data.Read<Dictionary<string, long>>(FilePathZone);
       ZoneTimestamps = data.ToDictionary(
         kvp =>
         {

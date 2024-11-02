@@ -1,6 +1,6 @@
 {
   "name": "Cron_Job",
-  "version_number": "1.10.0",
+  "version_number": "1.11.0",
   "website_url": "https://github.com/JereKuusela/valheim-cron_job",
   "description": "Allows executing commands automatically on the server.",
   "dependencies": [
