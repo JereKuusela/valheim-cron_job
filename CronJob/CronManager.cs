@@ -50,6 +50,9 @@ public class CronManager
     {
       var t = cron.UseGameTime ? gameTime : time;
       var p = cron.UseGameTime ? PreviousGameTime : Previous;
+      // Not fully sure what happens if current time is before the previous time.
+      // This can happen when setting the game time.
+      if (t < p) continue;
       if (t < Parse(cron.Schedule, p)) continue;
       RunJob(cron.Commands, cron.Chance, cron.Log);
     }
@@ -149,8 +152,11 @@ public class CronManager
     {
       var cmds = cron.Commands.Select(cmd => cmd
         .Replace("<name>", peer.m_playerName)
+        .Replace("<pname>", peer.m_playerName)
         .Replace("<first>", peer.m_playerName.Split(' ')[0])
         .Replace("<id>", peer.m_characterID.UserID.ToString())
+        .Replace("<pid>", peer.m_rpc.GetSocket().GetHostName())
+        .Replace("<pchar>", peer.m_characterID.UserID.ToString())
         .Replace("<x>", peer.m_refPos.x.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("<y>", peer.m_refPos.y.ToString("F2", CultureInfo.InvariantCulture))
         .Replace("<z>", peer.m_refPos.z.ToString("F2", CultureInfo.InvariantCulture)));

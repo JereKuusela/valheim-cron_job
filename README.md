@@ -75,8 +75,11 @@ Command parameters:
 Command parameters:
 
 - `<name>`: Name of the player. For example "John Doe".
+- `<pname>`: Name of the player. For example "John Doe".
 - `<first>`: First name of the player. For example "John" in "John Doe".
-- `<id>`: Player id. For example 12335.
+- `<pid>`: Steam id.
+- `<id>`: Character id.
+- `<pchar>`: Character id.
 - `<x>`: X coordinate of the player position. For example 2.31.
 - `<y>`: Y coordinate of the player position. For example 30.64.
 - `<z>`: Z coordinate of the player position. For example -1232.21.
