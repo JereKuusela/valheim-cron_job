@@ -7,7 +7,7 @@ using HarmonyLib;
 namespace CronJob;
 public static class DiscordHook
 {
-  public const string GUID = "games.nwest.valheim.discordconnector";
+  public const string GUID = "nwesterhausen.DiscordConnector";
   private static Assembly? assembly;
   private static MethodInfo? sendMessage;
   private static Type? eventType;

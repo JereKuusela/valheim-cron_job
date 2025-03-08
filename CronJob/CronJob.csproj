@@ -37,19 +37,21 @@
     <Reference Include="BepInEx.Harmony.dll">
       <HintPath>..\..\Libs\BepInEx.Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="assembly_valheim_publicized.dll">
-      <HintPath>..\..\Libs\assembly_valheim_publicized.dll</HintPath>
+    <Reference Include="assembly_valheim.dll">
+      <HintPath>..\..\Libs\assembly_valheim.dll</HintPath>
     </Reference>
-    <Reference Include="assembly_utils_publicized.dll">
-      <HintPath>..\..\Libs\assembly_utils_publicized.dll</HintPath>
+    <Reference Include="assembly_utils.dll">
+      <HintPath>..\..\Libs\assembly_utils.dll</HintPath>
     </Reference>
-    <Reference Include="assembly_guiutils_publicized.dll">
-      <HintPath>..\..\Libs\assembly_guiutils_publicized.dll</HintPath>
+    <Reference Include="assembly_guiutils.dll">
+      <HintPath>..\..\Libs\assembly_guiutils.dll</HintPath>
+    </Reference>
+    <Reference Include="YamlDotNet.dll">
+      <HintPath>..\..\Libs\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.34.2" />
-    <PackageReference Include="YamlDotNet" Version="16.1.3" />
     <PackageReference Include="Cronos" Version="0.8.2" />
   </ItemGroup>
 </Project>

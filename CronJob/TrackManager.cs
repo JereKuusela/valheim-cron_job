@@ -30,12 +30,12 @@ public class TrackManager
     if (File.Exists(FilePathZone))
       ZoneTrackFromFile();
   }
-  [HarmonyPatch(typeof(ZNet), nameof(ZNet.SaveWorldThread)), HarmonyPostfix]
+  [HarmonyPatch(typeof(ZNet), nameof(ZNet.SaveWorldThread)), HarmonyPrefix]
   public static void OnSave()
   {
     var jobData = new Dictionary<string, long>() {
-      { "world", CronManager.Previous.Ticks },
-      { "game", CronManager.PreviousGameTime.Ticks }
+      { "world", CronManager.Previous.Ticks + TimeSpan.TicksPerSecond },
+      { "game", CronManager.PreviousGameTime.Ticks + TimeSpan.TicksPerSecond }
     };
     var yaml = Data.Serializer().Serialize(jobData);
     File.WriteAllText(FilePathJob, yaml);
