@@ -53,6 +53,10 @@ public class CronEntryData
   public string objects = "";
   [DefaultValue("")]
   public string bannedObjects = "";
+  [DefaultValue("")]
+  public string globalKeys = "";
+  [DefaultValue("")]
+  public string bannedGlobalKeys = "";
 }
 
 public class CronGeneralJob(CronEntryData data) : CronBaseJob(data)
@@ -77,4 +81,6 @@ public abstract class CronBaseJob(CronEntryData data)
   public string[] Commands = data.commands ?? [data.command];
   public float? Chance = data.chance;
   public bool? Log = data.log;
+  public string[] GlobalKeys = Parse.Split(data.globalKeys);
+  public string[] BannedGlobalKeys = Parse.Split(data.bannedGlobalKeys);
 }

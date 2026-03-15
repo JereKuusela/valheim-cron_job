@@ -37,6 +37,10 @@ After starting the server, `cron.yaml` and `cron_track.yaml` files are created i
   - In game time starts from year 2000.
 - chance: Chance of executing the command. Default is 1 (100%).
 - log: Whether to log the job. If missing, `logJobs` value is used.
+- globalKeys: List of required global keys separated by `,`.
+  - If any listed key is missing, the job is skipped.
+- bannedGlobalKeys: List of banned global keys separated by `,`.
+  - If any listed key exists, the job is skipped.
 
 ## Zone jobs
 

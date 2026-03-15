@@ -1,3 +1,6 @@
+- v1.13
+  - Adds new fields `globalKeys` and `bannedGlobalKeys` to allow skipping jobs based on global keys.
+
 - v1.12
   - Adds dependency to YamlDotnet package.
   - Fixed to work with the new Discord Connector mod update.
@@ -17,6 +20,3 @@
   - Adds support for changing the Discord Connector message type.
   - Adds a new setting "logSkipped" to allow disabling logging of skipped jobs.
   - Changes the default Discord Connector mesasge type from "Other" to "cronjob".
-
-- v1.8
-  - Fixed for the new update.

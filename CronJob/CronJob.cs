@@ -4,12 +4,13 @@ using HarmonyLib;
 using UnityEngine;
 
 namespace CronJob;
+
 [BepInPlugin(GUID, NAME, VERSION)]
 public class CronJob : BaseUnityPlugin
 {
   public const string GUID = "cron_job";
   public const string NAME = "Cron Job";
-  public const string VERSION = "1.12";
+  public const string VERSION = "1.13";
   private static ManualLogSource? Logs;
   public static ManualLogSource Log => Logs!;
   public void Awake()

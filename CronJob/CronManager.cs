@@ -29,7 +29,7 @@ public class CronManager
   public static DateTime PreviousGameTime = new(Year2000, DateTimeKind.Utc);
   public static TimeZoneInfo TimeZone = TimeZoneInfo.Utc;
 
-  private static DateTime? Parse(string value, DateTime? next = null)
+  private static DateTime? ParseCron(string value, DateTime? next = null)
   {
     var format = value.Split(' ').Length == 6 ? CronFormat.IncludeSeconds : CronFormat.Standard;
     CronExpression expression = CronExpression.Parse(value, format);
@@ -48,12 +48,14 @@ public class CronManager
     DateTime gameTime = new(Year2000 + (long)(ZNet.instance.GetTimeSeconds() / EnvMan.instance.m_dayLengthSec * TimeSpan.TicksPerDay), DateTimeKind.Utc);
     foreach (var cron in Jobs)
     {
+      if (cron.GlobalKeys.Length > 0 && !HasEveryGlobalKey(cron.GlobalKeys)) continue;
+      if (cron.BannedGlobalKeys.Length > 0 && HasAnyGlobalKey(cron.BannedGlobalKeys)) continue;
       var t = cron.UseGameTime ? gameTime : time;
       var p = cron.UseGameTime ? PreviousGameTime : Previous;
       // Not fully sure what happens if current time is before the previous time.
       // This can happen when setting the game time.
       if (t < p) continue;
-      if (t < Parse(cron.Schedule, p)) continue;
+      if (t < ParseCron(cron.Schedule, p)) continue;
       RunJob(cron.Commands, cron.Chance, cron.Log);
     }
     Previous = time;
@@ -96,7 +98,7 @@ public class CronManager
     var wg = WorldGenerator.instance;
     foreach (var cron in toRun)
     {
-      if (time < Parse(cron.Schedule, previous)) continue;
+      if (time < ParseCron(cron.Schedule, previous)) continue;
       var pos = ZoneSystem.GetZonePos(zone);
       if (cron.Biomes != 0)
       {
@@ -138,6 +140,9 @@ public class CronManager
     }
     return true;
   }
+
+  public static bool HasAnyGlobalKey(IEnumerable<string> keys) => keys.Any(ZoneSystem.instance.m_globalKeys.Contains);
+  public static bool HasEveryGlobalKey(IEnumerable<string> keys) => keys.All(ZoneSystem.instance.m_globalKeys.Contains);
 
   private static HashSet<ZNetPeer> HandledPeers = [];
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_CharacterID)), HarmonyPostfix]
