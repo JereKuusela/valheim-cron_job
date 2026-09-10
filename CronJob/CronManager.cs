@@ -88,7 +88,7 @@ public class CronManager
     if (DiscordConnector != "")
       DiscordHook.SendMessage(DiscordConnector, message);
   }
-  public static bool Execute(Vector2i zone, bool hasPlayer, DateTime? previous)
+  public static bool Execute(Vector2s zone, bool hasPlayer, DateTime? previous)
   {
     var toRun = ZoneJobs.Where(cron => !cron.AvoidPlayers || !hasPlayer).ToList();
     if (toRun.Count == 0) return false;
@@ -116,7 +116,8 @@ public class CronManager
       }
       if (cron.Objects.Count > 0)
       {
-        var sector = zm.SectorToIndex(zone);
+
+        var sector = ZoneSystem.SectorToIndex(zone).Sector;
         if (sector < 0 || sector >= zm.m_objectsBySector.Length) continue;
         var zdos = zm.m_objectsBySector[sector];
         if (zdos == null) continue;
@@ -124,7 +125,7 @@ public class CronManager
       }
       if (cron.BannedObjects.Count > 0)
       {
-        var sector = zm.SectorToIndex(zone);
+        var sector = ZoneSystem.SectorToIndex(zone).Sector;
         if (sector < 0 || sector >= zm.m_objectsBySector.Length) continue;
         var zdos = zm.m_objectsBySector[sector];
         if (zdos == null) continue;
@@ -144,7 +145,7 @@ public class CronManager
   public static bool HasAnyGlobalKey(IEnumerable<string> keys) => keys.Any(ZoneSystem.instance.m_globalKeys.Contains);
   public static bool HasEveryGlobalKey(IEnumerable<string> keys) => keys.All(ZoneSystem.instance.m_globalKeys.Contains);
 
-  private static HashSet<ZNetPeer> HandledPeers = [];
+  private static readonly HashSet<ZNetPeer> HandledPeers = [];
   [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_CharacterID)), HarmonyPostfix]
   static void AddPeer(ZNet __instance, ZRpc rpc, ZDOID characterID)
   {

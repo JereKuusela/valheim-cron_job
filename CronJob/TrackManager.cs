@@ -60,7 +60,7 @@ public class TrackManager
         kvp =>
         {
           var split = kvp.Key.Split(',');
-          return new Vector2i(int.Parse(split[0]), int.Parse(split[1]));
+          return new Vector2s(int.Parse(split[0]), int.Parse(split[1]));
         },
         kvp => new DateTime(kvp.Value, DateTimeKind.Utc)
       );
@@ -71,9 +71,9 @@ public class TrackManager
       CronJob.Log.LogError(e.StackTrace);
     }
   }
-  public static Dictionary<Vector2i, DateTime> ZoneTimestamps = [];
+  public static Dictionary<Vector2s, DateTime> ZoneTimestamps = [];
 
-  private static readonly HashSet<Vector2i> Zones = [];
+  private static readonly HashSet<Vector2s> Zones = [];
   public static void Track()
   {
     if (CronManager.ZoneJobs.Count == 0) return;
@@ -87,31 +87,33 @@ public class TrackManager
       Poke(zone, hasPlayer.Contains(zone));
   }
 
-  private static void Poke(Vector2i zone, bool hasPlayer)
+  private static void Poke(Vector2s zone, bool hasPlayer)
   {
     DateTime? previous = ZoneTimestamps.ContainsKey(zone) ? ZoneTimestamps[zone] : null;
     if (CronManager.Execute(zone, hasPlayer, previous))
       ZoneTimestamps[zone] = DateTime.UtcNow;
   }
 
-  private static void TrackPeer(HashSet<Vector2i> zones, Vector3 pos)
+  private static void TrackPeer(HashSet<Vector2s> zones, Vector3 pos)
   {
     var zs = ZoneSystem.instance;
     var middle = ZoneSystem.GetZone(pos);
-    var num = zs.m_activeArea + zs.m_activeDistantArea;
+    // Was previously using zs.m_activeArea + zs.m_activeDistantArea but these don't exist anymore.
+    // 2 would be loaded area, so 3 is probably a good guess even though previous was like 4.
+    var num = 3;
     for (var i = middle.y - num; i <= middle.y + num; i++)
     {
       for (var j = middle.x - num; j <= middle.x + num; j++)
       {
-        Vector2i zone = new(j, i);
+        Vector2s zone = new(j, i);
         if (zs.IsZoneGenerated(zone))
           zones.Add(zone);
       }
     }
   }
 
-  private static readonly HashSet<Vector2i> PlayerZones = [];
-  private static HashSet<Vector2i> GetPlayerZones()
+  private static readonly HashSet<Vector2s> PlayerZones = [];
+  private static HashSet<Vector2s> GetPlayerZones()
   {
     PlayerZones.Clear();
     if (!ZNet.instance.IsDedicated())
